@@ -1,0 +1,38 @@
+{
+  "nodes": [
+    {
+      "id": "src/screens/Home/Home.tsx",
+      "label": "Home",
+      "routes": [
+        "/"
+      ],
+      "dataModelId": "4014:29687",
+      "isRoot": true
+    },
+    {
+      "id": "src/screens/Estate/Estate.tsx",
+      "label": "Estate",
+      "routes": [
+        "/estate"
+      ],
+      "dataModelId": "4001:152980"
+    },
+    {
+      "id": "src/screens/Filtering/Filtering.tsx",
+      "label": "Filtering",
+      "routes": [
+        "/filter"
+      ],
+      "dataModelId": "4014:29596"
+    },
+    {
+      "id": "src/screens/Product/Product.tsx",
+      "label": "Product",
+      "routes": [
+        "/product"
+      ],
+      "dataModelId": "4014:29542"
+    }
+  ],
+  "edges": []
+}

@@ -1,0 +1,1 @@
+export { CategoryFilterSection } from "./CategoryFilterSection";

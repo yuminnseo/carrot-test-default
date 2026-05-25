@@ -1,0 +1,273 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  * {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  *::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+  }
+
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    @apply appearance-none bg-transparent border-0 outline-none;
+  }
+}
+
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .all-\[unset\] {
+    all: unset;
+  }
+
+  .scrollbar-hidden {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hidden::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+  }
+}
+
+:root {
+  --body-large-font-family: "Pretendard", Helvetica;
+  --body-large-font-size: 17px;
+  --body-large-font-style: normal;
+  --body-large-font-weight: 400;
+  --body-large-letter-spacing: 0px;
+  --body-large-line-height: 20px;
+  --body-medium-font-family: "Pretendard", Helvetica;
+  --body-medium-font-size: 15px;
+  --body-medium-font-style: normal;
+  --body-medium-font-weight: 400;
+  --body-medium-letter-spacing: 0px;
+  --body-medium-line-height: 20px;
+  --body-small-font-family: "Pretendard", Helvetica;
+  --body-small-font-size: 14px;
+  --body-small-font-style: normal;
+  --body-small-font-weight: 500;
+  --body-small-letter-spacing: 0px;
+  --body-small-line-height: 20px;
+  --caption-medium-font-family: "Pretendard", Helvetica;
+  --caption-medium-font-size: 13px;
+  --caption-medium-font-style: normal;
+  --caption-medium-font-weight: 400;
+  --caption-medium-letter-spacing: 0px;
+  --caption-medium-line-height: 16px;
+  --caption-small-font-family: "Pretendard", Helvetica;
+  --caption-small-font-size: 12px;
+  --caption-small-font-style: normal;
+  --caption-small-font-weight: 500;
+  --caption-small-letter-spacing: 0px;
+  --caption-small-line-height: 12px;
+  --caption-xsmall-font-family: "Pretendard", Helvetica;
+  --caption-xsmall-font-size: 10px;
+  --caption-xsmall-font-style: normal;
+  --caption-xsmall-font-weight: 400;
+  --caption-xsmall-letter-spacing: 0px;
+  --caption-xsmall-line-height: 12px;
+  --headline-font-family: "Pretendard", Helvetica;
+  --headline-font-size: 17px;
+  --headline-font-style: normal;
+  --headline-font-weight: 600;
+  --headline-letter-spacing: 0px;
+  --headline-line-height: 20px;
+  --label-large-font-family: "Pretendard", Helvetica;
+  --label-large-font-size: 16px;
+  --label-large-font-style: normal;
+  --label-large-font-weight: 600;
+  --label-large-letter-spacing: 0px;
+  --label-large-line-height: 20px;
+  --label-medium-font-family: "Pretendard", Helvetica;
+  --label-medium-font-size: 14px;
+  --label-medium-font-style: normal;
+  --label-medium-font-weight: 700;
+  --label-medium-letter-spacing: 0px;
+  --label-medium-line-height: 16px;
+  --label-small-font-family: "Pretendard", Helvetica;
+  --label-small-font-size: 13px;
+  --label-small-font-style: normal;
+  --label-small-font-weight: 500;
+  --label-small-letter-spacing: 0px;
+  --label-small-line-height: 16px;
+  --platform-label5-regular-font-family: "Pretendard", Helvetica;
+  --platform-label5-regular-font-size: 11px;
+  --platform-label5-regular-font-style: normal;
+  --platform-label5-regular-font-weight: 400;
+  --platform-label5-regular-letter-spacing: 0px;
+  --platform-label5-regular-line-height: 135.0000023841858%;
+  --shadow-100: 0px 1px 3px 0px rgba(17, 17, 17, 0.08);
+  --shadow-200: 0px 1px 6px 0px rgba(17, 17, 17, 0.18);
+  --theme-lightscalegray-900: rgba(33, 33, 36, 1);
+  --theme-lightsemanticdivider-3: rgba(220, 222, 227, 1);
+  --theme-lightsemanticpaper-default: rgba(255, 255, 255, 1);
+  --title-large-font-family: "Pretendard", Helvetica;
+  --title-large-font-size: 28px;
+  --title-large-font-style: normal;
+  --title-large-font-weight: 600;
+  --title-large-letter-spacing: 0px;
+  --title-large-line-height: 32px;
+  --title-medium-font-family: "Pretendard", Helvetica;
+  --title-medium-font-size: 22px;
+  --title-medium-font-style: normal;
+  --title-medium-font-weight: 600;
+  --title-medium-letter-spacing: 0px;
+  --title-medium-line-height: 28px;
+  --title-small-font-family: "Pretendard", Helvetica;
+  --title-small-font-size: 20px;
+  --title-small-font-style: normal;
+  --title-small-font-weight: 600;
+  --title-small-letter-spacing: 0px;
+  --title-small-line-height: 24px;
+  --title-xlarge-font-family: "Pretendard", Helvetica;
+  --title-xlarge-font-size: 34px;
+  --title-xlarge-font-style: normal;
+  --title-xlarge-font-weight: 600;
+  --title-xlarge-letter-spacing: 0px;
+  --title-xlarge-line-height: 36px;
+  --title-xsmall-font-family: "Pretendard", Helvetica;
+  --title-xsmall-font-size: 16px;
+  --title-xsmall-font-style: normal;
+  --title-xsmall-font-weight: 700;
+  --title-xsmall-letter-spacing: 0px;
+  --title-xsmall-line-height: 20px;
+  --title-xxlarge-font-family: "Pretendard", Helvetica;
+  --title-xxlarge-font-size: 36px;
+  --title-xxlarge-font-style: normal;
+  --title-xxlarge-font-weight: 700;
+  --title-xxlarge-letter-spacing: 0px;
+  --title-xxlarge-line-height: 40px;
+}
+
+:root {
+  --animate-spin: spin 1s linear infinite;
+}
+
+.animate-fade-in {
+  animation: fade-in 1s var(--animation-delay, 0s) ease forwards;
+}
+
+.animate-fade-up {
+  animation: fade-up 1s var(--animation-delay, 0s) ease forwards;
+}
+
+.animate-marquee {
+  animation: marquee var(--duration) infinite linear;
+}
+
+.animate-marquee-vertical {
+  animation: marquee-vertical var(--duration) linear infinite;
+}
+
+.animate-shimmer {
+  animation: shimmer 8s infinite;
+}
+
+.animate-spin {
+  animation: var(--animate-spin);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@keyframes image-glow {
+  0% {
+    opacity: 0;
+    animation-timing-function: cubic-bezier(0.74, 0.25, 0.76, 1);
+  }
+
+  10% {
+    opacity: 0.7;
+    animation-timing-function: cubic-bezier(0.12, 0.01, 0.08, 0.99);
+  }
+
+  to {
+    opacity: 0.4;
+  }
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade-up {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes shimmer {
+  0%,
+  90%,
+  to {
+    background-position: calc(-100% - var(--shimmer-width)) 0;
+  }
+
+  30%,
+  60% {
+    background-position: calc(100% + var(--shimmer-width)) 0;
+  }
+}
+
+@keyframes marquee {
+  0% {
+    transform: translate(0);
+  }
+
+  to {
+    transform: translateX(calc(-100% - var(--gap)));
+  }
+}
+
+@keyframes marquee-vertical {
+  0% {
+    transform: translateY(0);
+  }
+
+  to {
+    transform: translateY(calc(-100% - var(--gap)));
+  }
+}
