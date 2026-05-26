@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import {
   adRounds,
+  generateAdRecommendations,
   generateListings,
   getImagesForCategory,
   type EstateItem,
@@ -389,8 +390,8 @@ export const Estate = ({
   const hasActiveFilters = activeFilters.activeGroups.length > 0;
   const [adRoundIndex, setAdRoundIndex] = useState(0);
   const recommendationCards = useMemo(
-    () => makeImagesUnique(adRounds[adRoundIndex]),
-    [adRoundIndex],
+    () => makeImagesUnique(generateAdRecommendations(activeFilters, adRoundIndex)),
+    [activeFilters, adRoundIndex],
   );
   const listingItems = useMemo(
     () =>
@@ -494,84 +495,7 @@ export const Estate = ({
           </div>
         </section>
         <section
-          className="flex flex-col items-start px-5 py-1 relative self-stretch w-full flex-[0_0_auto]"
-          aria-labelledby="recommended-estates-heading"
-        >
-          <div className="flex flex-col items-start relative self-stretch w-full flex-[0_0_auto]">
-            <div className="flex flex-col items-start px-0 py-0.5 relative self-stretch w-full flex-[0_0_auto]">
-              <div className="flex items-end justify-between relative self-stretch w-full flex-[0_0_auto]">
-                <h2
-                  id="recommended-estates-heading"
-                  className="relative flex items-center w-fit mt-[-1.00px] font-title-xsmall font-[number:var(--title-xsmall-font-weight)] text-zinc-900 text-[length:var(--title-xsmall-font-size)] tracking-[var(--title-xsmall-letter-spacing)] leading-[var(--title-xsmall-line-height)] whitespace-nowrap [font-style:var(--title-xsmall-font-style)]"
-                >
-                  강남구 추천 매물
-                </h2>
-                <div className="inline-flex items-center gap-0.5 relative flex-[0_0_auto]">
-                  <div className="relative flex items-center w-fit mt-[-1.00px] font-label-small font-[number:var(--label-small-font-weight)] text-[#11111138] text-[length:var(--label-small-font-size)] tracking-[var(--label-small-letter-spacing)] leading-[var(--label-small-line-height)] whitespace-nowrap [font-style:var(--label-small-font-style)]">
-                    광고
-                  </div>
-                  <img
-                    className="h-4 relative flex-[0_0_auto]"
-                    alt="Leading button"
-                    src="https://c.animaapp.com/CCu1lgJX/img/leading-button-1.svg"
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="flex flex-col items-start px-0 py-3 relative self-stretch w-full flex-[0_0_auto]">
-              <div className="scrollbar-hidden -mx-5 flex w-[375px] items-center gap-3 overflow-x-scroll overflow-y-visible px-5 relative flex-[0_0_auto]">
-                {recommendationCards.map((card) => (
-                  <RecommendationCard
-                    key={card.id}
-                    item={card}
-                    onOpen={onOpenEstate}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-        <section className="flex flex-col items-center gap-2 relative self-stretch w-full flex-[0_0_auto]">
-          <div className="h-px bg-[#71717a38] relative self-stretch w-full" />
-          <div className="inline-flex flex-col items-start px-0 py-0.5 relative flex-[0_0_auto]">
-            <button
-              type="button"
-              aria-label="더 많은 매물 보기"
-              className="all-[unset] box-border inline-flex flex-col items-start relative flex-[0_0_auto]"
-              onClick={(event) => {
-                event.stopPropagation();
-                trackHypothesisClick("Estate More Ad Button", {
-                  page: "Estate",
-                  component: "Ad",
-                  current_round: adRoundIndex + 1,
-                  next_round: ((adRoundIndex + 1) % adRounds.length) + 1,
-                });
-                setAdRoundIndex((current) => (current + 1) % adRounds.length);
-              }}
-            >
-              <div className="inline-flex flex-col items-start relative flex-[0_0_auto]">
-                <div className="inline-flex items-center gap-0.5 relative flex-[0_0_auto]">
-                  <div className="inline-flex flex-col justify-center flex-[0_0_auto] items-center relative">
-                    <img
-                      className="relative h-4"
-                      alt="Icon variant"
-                      src="https://c.animaapp.com/CCu1lgJX/img/--icon-variant---3.svg"
-                    />
-                  </div>
-                  <div className="inline-flex items-center justify-center relative flex-[0_0_auto]">
-                    <div className="relative w-fit mt-[-1.00px] font-body-small font-[number:var(--body-small-font-weight)] text-zinc-800 text-[length:var(--body-small-font-size)] tracking-[var(--body-small-letter-spacing)] leading-[var(--body-small-line-height)] whitespace-nowrap [font-style:var(--body-small-font-style)]">
-                      더 많은 매물 보기
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="w-[calc(100%_+_8px)] -left-1 rounded absolute h-full top-0" />
-            </button>
-          </div>
-          <div className="h-2 bg-[#71717a0d] relative self-stretch w-full" />
-        </section>
-        <section
-          className="sticky top-0 z-10 flex flex-col items-start px-5 py-3 self-stretch w-full flex-[0_0_auto] bg-white"
+          className="sticky top-0 z-10 flex flex-col items-start px-5 py-2 self-stretch w-full flex-[0_0_auto] bg-white"
           aria-label="매물 필터"
         >
           <div className="scrollbar-hidden flex items-center gap-2 relative self-stretch w-full flex-[0_0_auto] overflow-x-scroll">
@@ -641,6 +565,83 @@ export const Estate = ({
               평수로 보기
             </div>
           </label>
+        </section>
+        <section
+          className="flex flex-col items-start px-5 py-1 relative self-stretch w-full flex-[0_0_auto]"
+          aria-labelledby="recommended-estates-heading"
+        >
+          <div className="flex flex-col items-start relative self-stretch w-full flex-[0_0_auto]">
+            <div className="flex flex-col items-start px-0 py-0.5 relative self-stretch w-full flex-[0_0_auto]">
+              <div className="flex items-end justify-between relative self-stretch w-full flex-[0_0_auto]">
+                <h2
+                  id="recommended-estates-heading"
+                  className="relative flex items-center w-fit mt-[-1.00px] font-title-xsmall font-[number:var(--title-xsmall-font-weight)] text-zinc-900 text-[length:var(--title-xsmall-font-size)] tracking-[var(--title-xsmall-letter-spacing)] leading-[var(--title-xsmall-line-height)] whitespace-nowrap [font-style:var(--title-xsmall-font-style)]"
+                >
+                  강남구 추천 매물
+                </h2>
+                <div className="inline-flex items-center gap-0.5 relative flex-[0_0_auto]">
+                  <div className="relative flex items-center w-fit mt-[-1.00px] font-label-small font-[number:var(--label-small-font-weight)] text-[#11111138] text-[length:var(--label-small-font-size)] tracking-[var(--label-small-letter-spacing)] leading-[var(--label-small-line-height)] whitespace-nowrap [font-style:var(--label-small-font-style)]">
+                    광고
+                  </div>
+                  <img
+                    className="h-4 relative flex-[0_0_auto]"
+                    alt="Leading button"
+                    src="https://c.animaapp.com/CCu1lgJX/img/leading-button-1.svg"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-col items-start px-0 py-1 relative self-stretch w-full flex-[0_0_auto]">
+              <div className="scrollbar-hidden -mx-5 flex w-[375px] items-center gap-3 overflow-x-scroll overflow-y-visible px-5 relative flex-[0_0_auto]">
+                {recommendationCards.map((card) => (
+                  <RecommendationCard
+                    key={card.id}
+                    item={card}
+                    onOpen={onOpenEstate}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+        <section className="flex flex-col items-center gap-2 relative self-stretch w-full flex-[0_0_auto]">
+          <div className="h-px bg-[#71717a38] relative self-stretch w-full" />
+          <div className="inline-flex flex-col items-start px-0 py-0.5 relative flex-[0_0_auto]">
+            <button
+              type="button"
+              aria-label="더 많은 매물 보기"
+              className="all-[unset] box-border inline-flex flex-col items-start relative flex-[0_0_auto]"
+              onClick={(event) => {
+                event.stopPropagation();
+                trackHypothesisClick("Estate More Ad Button", {
+                  page: "Estate",
+                  component: "Ad",
+                  current_round: adRoundIndex + 1,
+                  next_round: ((adRoundIndex + 1) % adRounds.length) + 1,
+                });
+                setAdRoundIndex((current) => (current + 1) % adRounds.length);
+              }}
+            >
+              <div className="inline-flex flex-col items-start relative flex-[0_0_auto]">
+                <div className="inline-flex items-center gap-0.5 relative flex-[0_0_auto]">
+                  <div className="inline-flex flex-col justify-center flex-[0_0_auto] items-center relative">
+                    <img
+                      className="relative h-4"
+                      alt="Icon variant"
+                      src="https://c.animaapp.com/CCu1lgJX/img/--icon-variant---3.svg"
+                    />
+                  </div>
+                  <div className="inline-flex items-center justify-center relative flex-[0_0_auto]">
+                    <div className="relative w-fit mt-[-1.00px] font-body-small font-[number:var(--body-small-font-weight)] text-zinc-800 text-[length:var(--body-small-font-size)] tracking-[var(--body-small-letter-spacing)] leading-[var(--body-small-line-height)] whitespace-nowrap [font-style:var(--body-small-font-style)]">
+                      더 많은 매물 보기
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="w-[calc(100%_+_8px)] -left-1 rounded absolute h-full top-0" />
+            </button>
+          </div>
+          <div className="h-2 bg-[#71717a0d] relative self-stretch w-full" />
         </section>
         <section
           className="flex items-center px-5 py-3 self-stretch w-full relative flex-[0_0_auto]"

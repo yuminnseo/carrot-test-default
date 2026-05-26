@@ -217,7 +217,7 @@ const toNumber = (value: string) => {
   return Number.parseFloat(value) || 0;
 };
 
-export const generateListings = (filters: FilterDraft): EstateItem[] => {
+const filterItems = (items: EstateItem[], filters: FilterDraft): EstateItem[] => {
   const selectedCategories = splitLabel(filters.labels["매물 종류"])
     .map(normalizeCategory)
     .filter((category): category is EstateCategory => Boolean(category));
@@ -227,7 +227,7 @@ export const generateListings = (filters: FilterDraft): EstateItem[] => {
   const rentRange = parseRange(filters.labels["가격"], "월세");
   const saleRange = parseRange(filters.labels["가격"], "매매가");
 
-  const filtered = baseListings.filter((item) => {
+  return items.filter((item) => {
     if (selectedCategories.length > 0 && !selectedCategories.includes(item.category)) {
       return false;
     }
@@ -256,8 +256,33 @@ export const generateListings = (filters: FilterDraft): EstateItem[] => {
 
     return true;
   });
+};
+
+export const generateListings = (filters: FilterDraft): EstateItem[] => {
+  const filtered = filterItems(baseListings, filters);
 
   return (filtered.length > 0 ? filtered : baseListings).slice(0, 8);
+};
+
+export const generateAdRecommendations = (
+  filters: FilterDraft,
+  roundIndex: number,
+): EstateItem[] => {
+  const adPool = adRounds.flat();
+  const filtered = filterItems([...adPool, ...baseListings], filters);
+  const source = filtered.length > 0 ? filtered : adRounds[roundIndex % adRounds.length];
+  const offset = (roundIndex * 5) % source.length;
+
+  return Array.from({ length: 5 }, (_, index) => {
+    const item = source[(offset + index) % source.length];
+
+    return {
+      ...item,
+      id: item.id.startsWith("ad-")
+        ? item.id
+        : `ad-hypothesis-${roundIndex + 1}-${item.id}`,
+    };
+  });
 };
 
 export const fallbackEstate = baseListings[0];
