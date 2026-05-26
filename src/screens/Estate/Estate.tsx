@@ -9,6 +9,7 @@ import {
   getEstateLiked,
   recordHeartClick,
 } from "../../data/estateStats";
+import { trackHypothesisClick } from "../../analytics";
 import type { FilterDraft } from "../Filtering/sections/FilterControlsSection/FilterControlsSection";
 
 const filterChips = [
@@ -45,16 +46,24 @@ const HeaderIconButton = ({
   alt,
   src,
   ariaLabel,
+  trackingName,
 }: {
   alt: string;
   src: string;
   ariaLabel: string;
+  trackingName: string;
 }) => {
   return (
     <button
       type="button"
       aria-label={ariaLabel}
       className="inline-flex flex-col items-center justify-center relative flex-[0_0_auto]"
+      onClick={() => {
+        trackHypothesisClick(trackingName, {
+          page: "Estate",
+          component: "Header",
+        });
+      }}
     >
       <div className="inline-flex flex-col items-center justify-center relative flex-[0_0_auto]">
         <img className="relative h-6" alt={alt} src={src} />
@@ -66,11 +75,15 @@ const HeaderIconButton = ({
 
 const HeartButton = ({
   itemId,
+  cardType,
+  category,
   className,
   defaultStroke = "#9CA3AF",
   labelPrefix = "관심 매물",
 }: {
   itemId: string;
+  cardType: "Ad" | "List";
+  category: string;
   className?: string;
   defaultStroke?: string;
   labelPrefix?: string;
@@ -88,6 +101,14 @@ const HeartButton = ({
         setLiked((current) => {
           const next = !current;
           recordHeartClick(itemId, next);
+          trackHypothesisClick("Estate Heart Button", {
+            page: "Estate",
+            component: "Heart",
+            card_id: itemId,
+            card_type: cardType,
+            category,
+            active: next,
+          });
           return next;
         });
       }}
@@ -122,7 +143,17 @@ const RecommendationCard = ({
       className="flex-col w-[124px] gap-2 flex items-start relative shrink-0 cursor-pointer"
       aria-label={`${item.category} ${item.transactionType} ${item.price} ${item.area} · ${item.floor} ${item.neighborhood}`}
       data-estate-id={item.id}
-      onClick={() => onOpen(item)}
+      onClick={() => {
+        trackHypothesisClick("Estate Card", {
+          page: "Estate",
+          component: "Ad Card Content",
+          card_id: item.id,
+          card_type: "Ad",
+          category: item.category,
+          transaction_type: item.transactionType,
+        });
+        onOpen(item);
+      }}
     >
       <div className="relative w-[124px] h-[84px] bg-zinc-100 rounded-lg overflow-hidden aspect-[1.48]">
         {item.image ? (
@@ -134,6 +165,8 @@ const RecommendationCard = ({
         ) : null}
         <HeartButton
           itemId={item.id}
+          cardType="Ad"
+          category={item.category}
           className="absolute right-2 top-2 inline-flex h-6 w-6 items-center justify-center"
           defaultStroke="#FFFFFF"
           labelPrefix="추천 관심 매물"
@@ -178,10 +211,12 @@ const FilterChip = ({
   active,
   label,
   displayLabel,
+  onClick,
 }: {
   active: boolean;
   label: string;
   displayLabel: string;
+  onClick: () => void;
 }) => {
   return (
     <button
@@ -189,6 +224,7 @@ const FilterChip = ({
       aria-label={`${label} 필터`}
       aria-pressed={active}
       className="inline-flex flex-col items-start px-2 py-1.5 relative flex-[0_0_auto]"
+      onClick={onClick}
     >
       <div
         className={`absolute w-full h-full top-0 left-0 rounded-full border border-solid ${
@@ -232,7 +268,17 @@ const ListingCard = ({
       className="gap-3 self-stretch w-full flex-[0_0_auto] flex items-start relative cursor-pointer"
       data-estate-id={item.id}
       aria-label={`${item.transactionType} ${item.price} ${item.category} · ${item.area} · ${item.floor}`}
-      onClick={() => onOpen(item)}
+      onClick={() => {
+        trackHypothesisClick("Estate Card", {
+          page: "Estate",
+          component: "List Card Content",
+          card_id: item.id,
+          card_type: "List",
+          category: item.category,
+          transaction_type: item.transactionType,
+        });
+        onOpen(item);
+      }}
     >
       <div className="relative w-[104px] h-[104px] bg-zinc-100 rounded-lg shrink-0 overflow-hidden">
         {item.image ? (
@@ -288,6 +334,8 @@ const ListingCard = ({
             </div>
             <HeartButton
               itemId={item.id}
+              cardType="List"
+              category={item.category}
               className="inline-flex flex-col items-start relative flex-[0_0_auto]"
             />
           </div>
@@ -369,6 +417,7 @@ export const Estate = ({
                 alt="Icon variant"
                 src="https://c.animaapp.com/CCu1lgJX/img/--icon-variant--.svg"
                 ariaLabel="뒤로 가기"
+                trackingName="Estate Header Back"
               />
             </div>
             <div className="inline-flex items-center gap-3 relative flex-[0_0_auto]">
@@ -383,11 +432,13 @@ export const Estate = ({
                 alt="Icon variant"
                 src="https://c.animaapp.com/CCu1lgJX/img/--icon-variant---1.svg"
                 ariaLabel="글쓰기"
+                trackingName="Estate Header Write"
               />
               <HeaderIconButton
                 alt="Icon variant"
                 src="https://c.animaapp.com/CCu1lgJX/img/--icon-variant---2.svg"
                 ariaLabel="메뉴 열기"
+                trackingName="Estate Header Menu"
               />
             </div>
           </div>
@@ -400,6 +451,13 @@ export const Estate = ({
               type="button"
               aria-label="지역 선택, 서울시 강남구"
               className="flex items-center gap-1 px-3 py-2 relative flex-1 grow bg-zinc-100 rounded-lg overflow-hidden text-left"
+              onClick={() => {
+                trackHypothesisClick("Estate Location Button", {
+                  page: "Estate",
+                  component: "Search Wrapper",
+                  location: "서울시 강남구",
+                });
+              }}
             >
               <div className="flex items-center gap-0.5 px-0 py-0.5 relative flex-1 grow">
                 <img
@@ -416,6 +474,12 @@ export const Estate = ({
               type="button"
               aria-label="지도 보기"
               className="all-[unset] box-border flex flex-col w-10 items-center px-2 py-1 relative rounded-lg overflow-hidden"
+              onClick={() => {
+                trackHypothesisClick("Estate Map Button", {
+                  page: "Estate",
+                  component: "Search Wrapper",
+                });
+              }}
             >
               <div className="bg-[#111111] rounded-lg opacity-[0.88] absolute w-full h-full top-0 left-0" />
               <img
@@ -476,6 +540,12 @@ export const Estate = ({
               className="all-[unset] box-border inline-flex flex-col items-start relative flex-[0_0_auto]"
               onClick={(event) => {
                 event.stopPropagation();
+                trackHypothesisClick("Estate More Ad Button", {
+                  page: "Estate",
+                  component: "Ad",
+                  current_round: adRoundIndex + 1,
+                  next_round: ((adRoundIndex + 1) % adRounds.length) + 1,
+                });
                 setAdRoundIndex((current) => (current + 1) % adRounds.length);
               }}
             >
@@ -512,6 +582,11 @@ export const Estate = ({
                 className="inline-flex h-9 w-9 flex-col items-center justify-center relative flex-[0_0_auto]"
                 onClick={(event) => {
                   event.stopPropagation();
+                  trackHypothesisClick("Estate Filter Reset Button", {
+                    page: "Estate",
+                    component: "Filtering_Wrapper",
+                    active_groups: activeFilters.activeGroups.join(","),
+                  });
                   onResetFilters();
                 }}
               >
@@ -530,6 +605,15 @@ export const Estate = ({
                 active={activeFilters.activeGroups.includes(chip)}
                 label={chip}
                 displayLabel={activeFilters.labels[chip] ?? chip}
+                onClick={() => {
+                  trackHypothesisClick("Estate Filter Chip", {
+                    page: "Estate",
+                    component: "Filtering_Wrapper",
+                    filter_group: chip,
+                    filter_label: activeFilters.labels[chip] ?? chip,
+                    active: activeFilters.activeGroups.includes(chip),
+                  });
+                }}
               />
             ))}
           </div>
@@ -541,6 +625,13 @@ export const Estate = ({
               className="sr-only peer"
               defaultChecked
               aria-label="평수로 보기"
+              onChange={(event) => {
+                trackHypothesisClick("Estate Area Unit Toggle", {
+                  page: "Estate",
+                  component: "Toggle_Wrapper",
+                  active: event.currentTarget.checked,
+                });
+              }}
             />
             <div className="flex w-8 items-center justify-end p-0.5 relative">
               <div className="bg-zinc-800 rounded-full absolute w-full h-full top-0 left-0 peer-checked:bg-zinc-800 peer-not-checked:bg-zinc-300" />
