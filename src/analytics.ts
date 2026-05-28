@@ -4,6 +4,7 @@ const MIXPANEL_TOKEN = import.meta.env.VITE_MIXPANEL_TOKEN;
 const HYPOTHESIS_VERSION = "Hypothesis_sequence_1";
 
 let initialized = false;
+let debugAppOpenedSent = false;
 
 type TrackingProperties = Record<
   string,
@@ -24,6 +25,33 @@ const ensureMixpanel = () => {
 
   return true;
 };
+
+const logMixpanelStartup = () => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  console.warn("[Mixpanel] token exists:", Boolean(MIXPANEL_TOKEN));
+  console.warn(
+    "[Mixpanel] mode:",
+    import.meta.env.MODE,
+    "path:",
+    window.location.pathname,
+  );
+
+  if (!ensureMixpanel() || debugAppOpenedSent) {
+    return;
+  }
+
+  mixpanel.track("Debug App Opened", {
+    path: window.location.pathname,
+    url: window.location.href,
+    mode: import.meta.env.MODE,
+  });
+  debugAppOpenedSent = true;
+};
+
+logMixpanelStartup();
 
 export const trackHypothesisClick = (
   buttonName: string,
