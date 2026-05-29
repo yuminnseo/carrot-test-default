@@ -83,3 +83,35 @@ export const trackHypothesisClick = (
 
   mixpanel.track("Click Main Button", eventProperties);
 };
+
+export const trackHypothesisEvent = (
+  eventName: string,
+  properties: TrackingProperties = {},
+) => {
+  const eventProperties = {
+    Version: HYPOTHESIS_VERSION,
+    ...properties,
+  };
+
+  if (typeof window !== "undefined") {
+    const debugEvents = [
+      ...((window as Window & {
+        __carrotAnalyticsEvents?: (TrackingProperties & {
+          eventName: string;
+        })[];
+      }).__carrotAnalyticsEvents ?? []),
+      { eventName, ...eventProperties },
+    ];
+
+    Object.defineProperty(window, "__carrotAnalyticsEvents", {
+      configurable: true,
+      value: debugEvents,
+    });
+  }
+
+  if (!ensureMixpanel()) {
+    return;
+  }
+
+  mixpanel.track(eventName, eventProperties);
+};

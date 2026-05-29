@@ -1,17 +1,63 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { EstateItem } from "../../data/estateData";
 import {
   getEstateLiked,
   recordChatClick,
   recordHeartClick,
 } from "../../data/estateStats";
+import { trackHypothesisClick, trackHypothesisEvent } from "../../analytics";
 
 export const Product = ({ item }: { item: EstateItem }): JSX.Element => {
   const [liked, setLiked] = useState(() => getEstateLiked(item.id));
+  const cardType = item.id.startsWith("ad-") ? "Ad" : "List";
+  const isAd = cardType === "Ad";
+  const heartClickedRef = useRef(false);
+  const chatClickedRef = useRef(false);
+
+  const productAnalyticsProperties = useMemo(
+    () => ({
+      page: "Product",
+      component: "Product Detail",
+      card_id: item.id,
+      card_type: cardType,
+      is_ad: isAd,
+      category: item.category,
+      transaction_type: item.transactionType,
+      price: item.price,
+      area_pyeong: item.areaPyeong,
+      neighborhood: item.neighborhood,
+    }),
+    [
+      cardType,
+      isAd,
+      item.areaPyeong,
+      item.category,
+      item.id,
+      item.neighborhood,
+      item.price,
+      item.transactionType,
+    ],
+  );
 
   useEffect(() => {
     setLiked(getEstateLiked(item.id));
+    heartClickedRef.current = false;
+    chatClickedRef.current = false;
   }, [item.id]);
+
+  useEffect(() => {
+    trackHypothesisEvent("Product Detail View", productAnalyticsProperties);
+
+    return () => {
+      trackHypothesisEvent("Product Detail Exit", {
+        ...productAnalyticsProperties,
+        had_heart_click: heartClickedRef.current,
+        had_chat_click: chatClickedRef.current,
+        exited_without_conversion:
+          !heartClickedRef.current && !chatClickedRef.current,
+      });
+    };
+  }, [productAnalyticsProperties]);
 
   const leftDetailItems = useMemo(
     () => [
@@ -52,7 +98,35 @@ export const Product = ({ item }: { item: EstateItem }): JSX.Element => {
     setLiked((current) => {
       const next = !current;
       recordHeartClick(item.id, next);
+      heartClickedRef.current = true;
+      trackHypothesisEvent("Product Heart Click", {
+        ...productAnalyticsProperties,
+        component: "Product Action Area",
+        active: next,
+        action: next ? "heart_on" : "heart_off",
+      });
+      trackHypothesisClick("Product Heart Button", {
+        ...productAnalyticsProperties,
+        component: "Product Action Area",
+        active: next,
+        action: next ? "heart_on" : "heart_off",
+      });
       return next;
+    });
+  };
+
+  const handleChatClick = () => {
+    recordChatClick(item.id);
+    chatClickedRef.current = true;
+    trackHypothesisEvent("Product CTA Click", {
+      ...productAnalyticsProperties,
+      component: "Product Action Area",
+      cta_name: "채팅하기",
+    });
+    trackHypothesisClick("Product Chat CTA", {
+      ...productAnalyticsProperties,
+      component: "Product Action Area",
+      cta_name: "채팅하기",
     });
   };
 
@@ -287,7 +361,7 @@ export const Product = ({ item }: { item: EstateItem }): JSX.Element => {
               type="button"
               className="all-[unset] box-border flex flex-col items-center justify-center px-6 py-3 relative flex-1 grow bg-zinc-800 rounded-xl overflow-hidden cursor-pointer"
               aria-label="채팅하기"
-              onClick={() => recordChatClick(item.id)}
+              onClick={handleChatClick}
             >
               <div className="inline-flex px-0 py-0.5 flex-[0_0_auto] flex-col items-start relative">
                 <div className="inline-flex items-center gap-1 relative flex-[0_0_auto]">

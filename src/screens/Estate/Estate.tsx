@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   adRounds,
   generateAdRecommendations,
@@ -10,7 +10,7 @@ import {
   getEstateLiked,
   recordHeartClick,
 } from "../../data/estateStats";
-import { trackHypothesisClick } from "../../analytics";
+import { trackHypothesisClick, trackHypothesisEvent } from "../../analytics";
 import type { FilterDraft } from "../Filtering/sections/FilterControlsSection/FilterControlsSection";
 
 const filterChips = [
@@ -23,6 +23,73 @@ const filterChips = [
   "사용승인일",
   "기타",
 ];
+
+type EstateCardType = "Ad" | "List";
+
+const getCardAnalyticsProperties = (
+  item: EstateItem,
+  cardType: EstateCardType,
+  component: string,
+) => ({
+  page: "Estate",
+  component,
+  card_id: item.id,
+  card_type: cardType,
+  is_ad: cardType === "Ad",
+  category: item.category,
+  transaction_type: item.transactionType,
+  price: item.price,
+  area_pyeong: item.areaPyeong,
+  neighborhood: item.neighborhood,
+});
+
+const useCardImpression = (
+  item: EstateItem,
+  cardType: EstateCardType,
+  component: string,
+  impressionSurface: string,
+  impressionPosition: number,
+  activeFilterGroups: string,
+) => {
+  const ref = useRef<HTMLElement | null>(null);
+  const sentRef = useRef(false);
+
+  useEffect(() => {
+    sentRef.current = false;
+  }, [item.id, cardType, component, impressionSurface, impressionPosition, activeFilterGroups]);
+
+  useEffect(() => {
+    const element = ref.current;
+
+    if (!element || typeof IntersectionObserver === "undefined") {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting || entry.intersectionRatio < 0.5 || sentRef.current) {
+          return;
+        }
+
+        sentRef.current = true;
+        trackHypothesisEvent("Estate Card Impression", {
+          ...getCardAnalyticsProperties(item, cardType, component),
+          impression_surface: impressionSurface,
+          impression_position: impressionPosition,
+          active_filter_groups: activeFilterGroups,
+        });
+        observer.disconnect();
+      },
+      { threshold: [0.5] },
+    );
+
+    observer.observe(element);
+
+    return () => observer.disconnect();
+  }, [activeFilterGroups, cardType, component, impressionPosition, impressionSurface, item]);
+
+  return ref;
+};
 
 const makeImagesUnique = (
   items: EstateItem[],
@@ -83,7 +150,7 @@ const HeartButton = ({
   labelPrefix = "관심 매물",
 }: {
   itemId: string;
-  cardType: "Ad" | "List";
+  cardType: EstateCardType;
   category: string;
   className?: string;
   defaultStroke?: string;
@@ -102,13 +169,25 @@ const HeartButton = ({
         setLiked((current) => {
           const next = !current;
           recordHeartClick(itemId, next);
+          trackHypothesisEvent("Estate Heart Click", {
+            page: "Estate",
+            component: "Heart",
+            card_id: itemId,
+            card_type: cardType,
+            is_ad: cardType === "Ad",
+            category,
+            active: next,
+            action: next ? "heart_on" : "heart_off",
+          });
           trackHypothesisClick("Estate Heart Button", {
             page: "Estate",
             component: "Heart",
             card_id: itemId,
             card_type: cardType,
+            is_ad: cardType === "Ad",
             category,
             active: next,
+            action: next ? "heart_on" : "heart_off",
           });
           return next;
         });
@@ -134,24 +213,38 @@ const HeartButton = ({
 
 const RecommendationCard = ({
   item,
+  impressionPosition,
+  activeFilterGroups,
   onOpen,
 }: {
   item: EstateItem;
+  impressionPosition: number;
+  activeFilterGroups: string;
   onOpen: (item: EstateItem) => void;
 }) => {
+  const impressionRef = useCardImpression(
+    item,
+    "Ad",
+    "Ad Card Content",
+    "recommended_ad",
+    impressionPosition,
+    activeFilterGroups,
+  );
+
   return (
     <article
+      ref={impressionRef}
       className="flex-col w-[124px] gap-2 flex items-start relative shrink-0 cursor-pointer"
       aria-label={`${item.category} ${item.transactionType} ${item.price} ${item.area} · ${item.floor} ${item.neighborhood}`}
       data-estate-id={item.id}
       onClick={() => {
+        trackHypothesisEvent(
+          "Estate Card Click",
+          getCardAnalyticsProperties(item, "Ad", "Ad Card Content"),
+        );
         trackHypothesisClick("Estate Card", {
-          page: "Estate",
-          component: "Ad Card Content",
-          card_id: item.id,
-          card_type: "Ad",
-          category: item.category,
-          transaction_type: item.transactionType,
+          ...getCardAnalyticsProperties(item, "Ad", "Ad Card Content"),
+          click_target: "card",
         });
         onOpen(item);
       }}
@@ -259,24 +352,38 @@ const FilterChip = ({
 
 const ListingCard = ({
   item,
+  impressionPosition,
+  activeFilterGroups,
   onOpen,
 }: {
   item: EstateItem;
+  impressionPosition: number;
+  activeFilterGroups: string;
   onOpen: (item: EstateItem) => void;
 }) => {
+  const impressionRef = useCardImpression(
+    item,
+    "List",
+    "List Card Content",
+    "listing",
+    impressionPosition,
+    activeFilterGroups,
+  );
+
   return (
     <article
+      ref={impressionRef}
       className="gap-3 self-stretch w-full flex-[0_0_auto] flex items-start relative cursor-pointer"
       data-estate-id={item.id}
       aria-label={`${item.transactionType} ${item.price} ${item.category} · ${item.area} · ${item.floor}`}
       onClick={() => {
+        trackHypothesisEvent(
+          "Estate Card Click",
+          getCardAnalyticsProperties(item, "List", "List Card Content"),
+        );
         trackHypothesisClick("Estate Card", {
-          page: "Estate",
-          component: "List Card Content",
-          card_id: item.id,
-          card_type: "List",
-          category: item.category,
-          transaction_type: item.transactionType,
+          ...getCardAnalyticsProperties(item, "List", "List Card Content"),
+          click_target: "card",
         });
         onOpen(item);
       }}
@@ -401,6 +508,7 @@ export const Estate = ({
       ),
     [activeFilters, recommendationCards],
   );
+  const activeFilterGroups = activeFilters.activeGroups.join(",") || "none";
 
   return (
     <main
@@ -593,10 +701,12 @@ export const Estate = ({
             </div>
             <div className="flex flex-col items-start px-0 py-1 relative self-stretch w-full flex-[0_0_auto]">
               <div className="scrollbar-hidden -mx-5 flex w-[375px] items-center gap-3 overflow-x-scroll overflow-y-visible px-5 relative flex-[0_0_auto]">
-                {recommendationCards.map((card) => (
+                {recommendationCards.map((card, index) => (
                   <RecommendationCard
                     key={card.id}
                     item={card}
+                    impressionPosition={index + 1}
+                    activeFilterGroups={activeFilterGroups}
                     onOpen={onOpenEstate}
                   />
                 ))}
@@ -650,7 +760,12 @@ export const Estate = ({
           <div className="flex flex-col items-start gap-4 relative flex-1 grow">
             {listingItems.map((item, index) => (
               <div key={item.id} className="w-full">
-                <ListingCard item={item} onOpen={onOpenEstate} />
+                <ListingCard
+                  item={item}
+                  impressionPosition={index + 1}
+                  activeFilterGroups={activeFilterGroups}
+                  onOpen={onOpenEstate}
+                />
                 {index < listingItems.length - 1 && (
                   <div className="relative self-stretch w-full h-px bg-[#71717a38] opacity-[0.61] mt-4" />
                 )}
