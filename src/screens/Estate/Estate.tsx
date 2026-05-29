@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   adRounds,
-  generateAdRecommendations,
   generateListings,
   getImagesForCategory,
   type EstateItem,
@@ -10,7 +9,6 @@ import {
   getEstateLiked,
   recordHeartClick,
 } from "../../data/estateStats";
-import { trackHypothesisClick, trackHypothesisEvent } from "../../analytics";
 import type { FilterDraft } from "../Filtering/sections/FilterControlsSection/FilterControlsSection";
 
 const filterChips = [
@@ -23,73 +21,6 @@ const filterChips = [
   "사용승인일",
   "기타",
 ];
-
-type EstateCardType = "Ad" | "List";
-
-const getCardAnalyticsProperties = (
-  item: EstateItem,
-  cardType: EstateCardType,
-  component: string,
-) => ({
-  page: "Estate",
-  component,
-  card_id: item.id,
-  card_type: cardType,
-  is_ad: cardType === "Ad",
-  category: item.category,
-  transaction_type: item.transactionType,
-  price: item.price,
-  area_pyeong: item.areaPyeong,
-  neighborhood: item.neighborhood,
-});
-
-const useCardImpression = (
-  item: EstateItem,
-  cardType: EstateCardType,
-  component: string,
-  impressionSurface: string,
-  impressionPosition: number,
-  activeFilterGroups: string,
-) => {
-  const ref = useRef<HTMLElement | null>(null);
-  const sentRef = useRef(false);
-
-  useEffect(() => {
-    sentRef.current = false;
-  }, [item.id, cardType, component, impressionSurface, impressionPosition, activeFilterGroups]);
-
-  useEffect(() => {
-    const element = ref.current;
-
-    if (!element || typeof IntersectionObserver === "undefined") {
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry.isIntersecting || entry.intersectionRatio < 0.5 || sentRef.current) {
-          return;
-        }
-
-        sentRef.current = true;
-        trackHypothesisEvent("Estate Card Impression", {
-          ...getCardAnalyticsProperties(item, cardType, component),
-          impression_surface: impressionSurface,
-          impression_position: impressionPosition,
-          active_filter_groups: activeFilterGroups,
-        });
-        observer.disconnect();
-      },
-      { threshold: [0.5] },
-    );
-
-    observer.observe(element);
-
-    return () => observer.disconnect();
-  }, [activeFilterGroups, cardType, component, impressionPosition, impressionSurface, item]);
-
-  return ref;
-};
 
 const makeImagesUnique = (
   items: EstateItem[],
@@ -114,24 +45,16 @@ const HeaderIconButton = ({
   alt,
   src,
   ariaLabel,
-  trackingName,
 }: {
   alt: string;
   src: string;
   ariaLabel: string;
-  trackingName: string;
 }) => {
   return (
     <button
       type="button"
       aria-label={ariaLabel}
       className="inline-flex flex-col items-center justify-center relative flex-[0_0_auto]"
-      onClick={() => {
-        trackHypothesisClick(trackingName, {
-          page: "Estate",
-          component: "Header",
-        });
-      }}
     >
       <div className="inline-flex flex-col items-center justify-center relative flex-[0_0_auto]">
         <img className="relative h-6" alt={alt} src={src} />
@@ -143,15 +66,11 @@ const HeaderIconButton = ({
 
 const HeartButton = ({
   itemId,
-  cardType,
-  category,
   className,
   defaultStroke = "#9CA3AF",
   labelPrefix = "관심 매물",
 }: {
   itemId: string;
-  cardType: EstateCardType;
-  category: string;
   className?: string;
   defaultStroke?: string;
   labelPrefix?: string;
@@ -169,26 +88,6 @@ const HeartButton = ({
         setLiked((current) => {
           const next = !current;
           recordHeartClick(itemId, next);
-          trackHypothesisEvent("Estate Heart Click", {
-            page: "Estate",
-            component: "Heart",
-            card_id: itemId,
-            card_type: cardType,
-            is_ad: cardType === "Ad",
-            category,
-            active: next,
-            action: next ? "heart_on" : "heart_off",
-          });
-          trackHypothesisClick("Estate Heart Button", {
-            page: "Estate",
-            component: "Heart",
-            card_id: itemId,
-            card_type: cardType,
-            is_ad: cardType === "Ad",
-            category,
-            active: next,
-            action: next ? "heart_on" : "heart_off",
-          });
           return next;
         });
       }}
@@ -213,41 +112,17 @@ const HeartButton = ({
 
 const RecommendationCard = ({
   item,
-  impressionPosition,
-  activeFilterGroups,
   onOpen,
 }: {
   item: EstateItem;
-  impressionPosition: number;
-  activeFilterGroups: string;
   onOpen: (item: EstateItem) => void;
 }) => {
-  const impressionRef = useCardImpression(
-    item,
-    "Ad",
-    "Ad Card Content",
-    "recommended_ad",
-    impressionPosition,
-    activeFilterGroups,
-  );
-
   return (
     <article
-      ref={impressionRef}
       className="flex-col w-[124px] gap-2 flex items-start relative shrink-0 cursor-pointer"
       aria-label={`${item.category} ${item.transactionType} ${item.price} ${item.area} · ${item.floor} ${item.neighborhood}`}
       data-estate-id={item.id}
-      onClick={() => {
-        trackHypothesisEvent(
-          "Estate Card Click",
-          getCardAnalyticsProperties(item, "Ad", "Ad Card Content"),
-        );
-        trackHypothesisClick("Estate Card", {
-          ...getCardAnalyticsProperties(item, "Ad", "Ad Card Content"),
-          click_target: "card",
-        });
-        onOpen(item);
-      }}
+      onClick={() => onOpen(item)}
     >
       <div className="relative w-[124px] h-[84px] bg-zinc-100 rounded-lg overflow-hidden aspect-[1.48]">
         {item.image ? (
@@ -259,8 +134,6 @@ const RecommendationCard = ({
         ) : null}
         <HeartButton
           itemId={item.id}
-          cardType="Ad"
-          category={item.category}
           className="absolute right-2 top-2 inline-flex h-6 w-6 items-center justify-center"
           defaultStroke="#FFFFFF"
           labelPrefix="추천 관심 매물"
@@ -305,12 +178,10 @@ const FilterChip = ({
   active,
   label,
   displayLabel,
-  onClick,
 }: {
   active: boolean;
   label: string;
   displayLabel: string;
-  onClick: () => void;
 }) => {
   return (
     <button
@@ -318,7 +189,6 @@ const FilterChip = ({
       aria-label={`${label} 필터`}
       aria-pressed={active}
       className="inline-flex flex-col items-start px-2 py-1.5 relative flex-[0_0_auto]"
-      onClick={onClick}
     >
       <div
         className={`absolute w-full h-full top-0 left-0 rounded-full border border-solid ${
@@ -352,41 +222,17 @@ const FilterChip = ({
 
 const ListingCard = ({
   item,
-  impressionPosition,
-  activeFilterGroups,
   onOpen,
 }: {
   item: EstateItem;
-  impressionPosition: number;
-  activeFilterGroups: string;
   onOpen: (item: EstateItem) => void;
 }) => {
-  const impressionRef = useCardImpression(
-    item,
-    "List",
-    "List Card Content",
-    "listing",
-    impressionPosition,
-    activeFilterGroups,
-  );
-
   return (
     <article
-      ref={impressionRef}
       className="gap-3 self-stretch w-full flex-[0_0_auto] flex items-start relative cursor-pointer"
       data-estate-id={item.id}
       aria-label={`${item.transactionType} ${item.price} ${item.category} · ${item.area} · ${item.floor}`}
-      onClick={() => {
-        trackHypothesisEvent(
-          "Estate Card Click",
-          getCardAnalyticsProperties(item, "List", "List Card Content"),
-        );
-        trackHypothesisClick("Estate Card", {
-          ...getCardAnalyticsProperties(item, "List", "List Card Content"),
-          click_target: "card",
-        });
-        onOpen(item);
-      }}
+      onClick={() => onOpen(item)}
     >
       <div className="relative w-[104px] h-[104px] bg-zinc-100 rounded-lg shrink-0 overflow-hidden">
         {item.image ? (
@@ -442,8 +288,6 @@ const ListingCard = ({
             </div>
             <HeartButton
               itemId={item.id}
-              cardType="List"
-              category={item.category}
               className="inline-flex flex-col items-start relative flex-[0_0_auto]"
             />
           </div>
@@ -497,8 +341,8 @@ export const Estate = ({
   const hasActiveFilters = activeFilters.activeGroups.length > 0;
   const [adRoundIndex, setAdRoundIndex] = useState(0);
   const recommendationCards = useMemo(
-    () => makeImagesUnique(generateAdRecommendations(activeFilters, adRoundIndex)),
-    [activeFilters, adRoundIndex],
+    () => makeImagesUnique(adRounds[adRoundIndex]),
+    [adRoundIndex],
   );
   const listingItems = useMemo(
     () =>
@@ -508,7 +352,6 @@ export const Estate = ({
       ),
     [activeFilters, recommendationCards],
   );
-  const activeFilterGroups = activeFilters.activeGroups.join(",") || "none";
 
   return (
     <main
@@ -526,7 +369,6 @@ export const Estate = ({
                 alt="Icon variant"
                 src="https://c.animaapp.com/CCu1lgJX/img/--icon-variant--.svg"
                 ariaLabel="뒤로 가기"
-                trackingName="Estate Header Back"
               />
             </div>
             <div className="inline-flex items-center gap-3 relative flex-[0_0_auto]">
@@ -541,13 +383,11 @@ export const Estate = ({
                 alt="Icon variant"
                 src="https://c.animaapp.com/CCu1lgJX/img/--icon-variant---1.svg"
                 ariaLabel="글쓰기"
-                trackingName="Estate Header Write"
               />
               <HeaderIconButton
                 alt="Icon variant"
                 src="https://c.animaapp.com/CCu1lgJX/img/--icon-variant---2.svg"
                 ariaLabel="메뉴 열기"
-                trackingName="Estate Header Menu"
               />
             </div>
           </div>
@@ -560,13 +400,6 @@ export const Estate = ({
               type="button"
               aria-label="지역 선택, 서울시 강남구"
               className="flex items-center gap-1 px-3 py-2 relative flex-1 grow bg-zinc-100 rounded-lg overflow-hidden text-left"
-              onClick={() => {
-                trackHypothesisClick("Estate Location Button", {
-                  page: "Estate",
-                  component: "Search Wrapper",
-                  location: "서울시 강남구",
-                });
-              }}
             >
               <div className="flex items-center gap-0.5 px-0 py-0.5 relative flex-1 grow">
                 <img
@@ -583,12 +416,6 @@ export const Estate = ({
               type="button"
               aria-label="지도 보기"
               className="all-[unset] box-border flex flex-col w-10 items-center px-2 py-1 relative rounded-lg overflow-hidden"
-              onClick={() => {
-                trackHypothesisClick("Estate Map Button", {
-                  page: "Estate",
-                  component: "Search Wrapper",
-                });
-              }}
             >
               <div className="bg-[#111111] rounded-lg opacity-[0.88] absolute w-full h-full top-0 left-0" />
               <img
@@ -601,78 +428,6 @@ export const Estate = ({
               </div>
             </button>
           </div>
-        </section>
-        <section
-          className="sticky top-0 z-10 flex flex-col items-start px-5 py-2 self-stretch w-full flex-[0_0_auto] bg-white"
-          aria-label="매물 필터"
-        >
-          <div className="scrollbar-hidden flex items-center gap-2 relative self-stretch w-full flex-[0_0_auto] overflow-x-scroll">
-            {hasActiveFilters ? (
-              <button
-                type="button"
-                aria-label="필터 초기화"
-                className="inline-flex h-9 w-9 flex-col items-center justify-center relative flex-[0_0_auto]"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  trackHypothesisClick("Estate Filter Reset Button", {
-                    page: "Estate",
-                    component: "Filtering_Wrapper",
-                    active_groups: activeFilters.activeGroups.join(","),
-                  });
-                  onResetFilters();
-                }}
-              >
-                <div className="absolute w-full h-full top-0 left-0 rounded-full bg-[#71717a14]" />
-                <img
-                  className="relative h-4"
-                  alt=""
-                  aria-hidden="true"
-                  src="https://c.animaapp.com/CCu1lgJX/img/--icon-variant---3.svg"
-                />
-              </button>
-            ) : null}
-            {filterChips.map((chip) => (
-              <FilterChip
-                key={chip}
-                active={activeFilters.activeGroups.includes(chip)}
-                label={chip}
-                displayLabel={activeFilters.labels[chip] ?? chip}
-                onClick={() => {
-                  trackHypothesisClick("Estate Filter Chip", {
-                    page: "Estate",
-                    component: "Filtering_Wrapper",
-                    filter_group: chip,
-                    filter_label: activeFilters.labels[chip] ?? chip,
-                    active: activeFilters.activeGroups.includes(chip),
-                  });
-                }}
-              />
-            ))}
-          </div>
-        </section>
-        <section className="flex flex-col items-start pt-0 pb-3 px-5 relative self-stretch w-full flex-[0_0_auto]">
-          <label className="inline-flex items-center gap-2 relative flex-[0_0_auto] cursor-pointer">
-            <input
-              type="checkbox"
-              className="sr-only peer"
-              defaultChecked
-              aria-label="평수로 보기"
-              onChange={(event) => {
-                trackHypothesisClick("Estate Area Unit Toggle", {
-                  page: "Estate",
-                  component: "Toggle_Wrapper",
-                  active: event.currentTarget.checked,
-                });
-              }}
-            />
-            <div className="flex w-8 items-center justify-end p-0.5 relative">
-              <div className="bg-zinc-800 rounded-full absolute w-full h-full top-0 left-0 peer-checked:bg-zinc-800 peer-not-checked:bg-zinc-300" />
-              <div className="relative w-4 h-4 bg-white rounded-full aspect-[1] transition-transform peer-checked:translate-x-0 peer-not-checked:-translate-x-3" />
-            </div>
-            <div className="relative flex items-center w-fit font-label-small font-[number:var(--label-small-font-weight)] text-[#111111cc] text-[length:var(--label-small-font-size)] tracking-[var(--label-small-letter-spacing)] leading-[var(--label-small-line-height)] whitespace-nowrap [font-style:var(--label-small-font-style)]">
-              평수로 보기
-            </div>
-          </label>
         </section>
         <section
           className="flex flex-col items-start px-5 py-1 relative self-stretch w-full flex-[0_0_auto]"
@@ -699,14 +454,12 @@ export const Estate = ({
                 </div>
               </div>
             </div>
-            <div className="flex flex-col items-start px-0 py-1 relative self-stretch w-full flex-[0_0_auto]">
+            <div className="flex flex-col items-start px-0 py-3 relative self-stretch w-full flex-[0_0_auto]">
               <div className="scrollbar-hidden -mx-5 flex w-[375px] items-center gap-3 overflow-x-scroll overflow-y-visible px-5 relative flex-[0_0_auto]">
-                {recommendationCards.map((card, index) => (
+                {recommendationCards.map((card) => (
                   <RecommendationCard
                     key={card.id}
                     item={card}
-                    impressionPosition={index + 1}
-                    activeFilterGroups={activeFilterGroups}
                     onOpen={onOpenEstate}
                   />
                 ))}
@@ -723,12 +476,6 @@ export const Estate = ({
               className="all-[unset] box-border inline-flex flex-col items-start relative flex-[0_0_auto]"
               onClick={(event) => {
                 event.stopPropagation();
-                trackHypothesisClick("Estate More Ad Button", {
-                  page: "Estate",
-                  component: "Ad",
-                  current_round: adRoundIndex + 1,
-                  next_round: ((adRoundIndex + 1) % adRounds.length) + 1,
-                });
                 setAdRoundIndex((current) => (current + 1) % adRounds.length);
               }}
             >
@@ -754,18 +501,64 @@ export const Estate = ({
           <div className="h-2 bg-[#71717a0d] relative self-stretch w-full" />
         </section>
         <section
+          className="sticky top-0 z-10 flex flex-col items-start px-5 py-3 self-stretch w-full flex-[0_0_auto] bg-white"
+          aria-label="매물 필터"
+        >
+          <div className="scrollbar-hidden flex items-center gap-2 relative self-stretch w-full flex-[0_0_auto] overflow-x-scroll">
+            {hasActiveFilters ? (
+              <button
+                type="button"
+                aria-label="필터 초기화"
+                className="inline-flex h-9 w-9 flex-col items-center justify-center relative flex-[0_0_auto]"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onResetFilters();
+                }}
+              >
+                <div className="absolute w-full h-full top-0 left-0 rounded-full bg-[#71717a14]" />
+                <img
+                  className="relative h-4"
+                  alt=""
+                  aria-hidden="true"
+                  src="https://c.animaapp.com/CCu1lgJX/img/--icon-variant---3.svg"
+                />
+              </button>
+            ) : null}
+            {filterChips.map((chip) => (
+              <FilterChip
+                key={chip}
+                active={activeFilters.activeGroups.includes(chip)}
+                label={chip}
+                displayLabel={activeFilters.labels[chip] ?? chip}
+              />
+            ))}
+          </div>
+        </section>
+        <section className="flex flex-col items-start pt-0 pb-3 px-5 relative self-stretch w-full flex-[0_0_auto]">
+          <label className="inline-flex items-center gap-2 relative flex-[0_0_auto] cursor-pointer">
+            <input
+              type="checkbox"
+              className="sr-only peer"
+              defaultChecked
+              aria-label="평수로 보기"
+            />
+            <div className="flex w-8 items-center justify-end p-0.5 relative">
+              <div className="bg-zinc-800 rounded-full absolute w-full h-full top-0 left-0 peer-checked:bg-zinc-800 peer-not-checked:bg-zinc-300" />
+              <div className="relative w-4 h-4 bg-white rounded-full aspect-[1] transition-transform peer-checked:translate-x-0 peer-not-checked:-translate-x-3" />
+            </div>
+            <div className="relative flex items-center w-fit font-label-small font-[number:var(--label-small-font-weight)] text-[#111111cc] text-[length:var(--label-small-font-size)] tracking-[var(--label-small-letter-spacing)] leading-[var(--label-small-line-height)] whitespace-nowrap [font-style:var(--label-small-font-style)]">
+              평수로 보기
+            </div>
+          </label>
+        </section>
+        <section
           className="flex items-center px-5 py-3 self-stretch w-full relative flex-[0_0_auto]"
           aria-label="매물 목록"
         >
           <div className="flex flex-col items-start gap-4 relative flex-1 grow">
             {listingItems.map((item, index) => (
               <div key={item.id} className="w-full">
-                <ListingCard
-                  item={item}
-                  impressionPosition={index + 1}
-                  activeFilterGroups={activeFilterGroups}
-                  onOpen={onOpenEstate}
-                />
+                <ListingCard item={item} onOpen={onOpenEstate} />
                 {index < listingItems.length - 1 && (
                   <div className="relative self-stretch w-full h-px bg-[#71717a38] opacity-[0.61] mt-4" />
                 )}
