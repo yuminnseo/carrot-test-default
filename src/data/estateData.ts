@@ -125,6 +125,21 @@ const priceFor = (category: EstateCategory, index: number) => {
     return { transactionType: "매매" as const, price: `${18 + index * 2}억`, deposit: 0, monthlyRent: 0, salePrice: (18 + index * 2) * 10000 };
   }
 
+  if (category === "원룸" || category === "오피스텔") {
+    const depositOptions = [500, 1000, 1500, 2000];
+    const rentOptions = [40, 45, 50, 55, 60, 65];
+    const deposit = pick(depositOptions, index);
+    const rent = pick(rentOptions, index + 1);
+
+    return {
+      transactionType: "월세" as const,
+      price: `${deposit} / ${rent}`,
+      deposit,
+      monthlyRent: rent,
+      salePrice: 0,
+    };
+  }
+
   const deposit = 1000 + index * 500;
   const rent = category === "상가" || category === "사무실" ? 45 + index * 10 : 35 + index * 5;
 
@@ -168,13 +183,13 @@ const createItem = (id: string, category: EstateCategory, index: number): Estate
 };
 
 export const adRounds: EstateItem[][] = [
-  ["상가", "공장", "상가", "빌라", "공장"].map((category, index) =>
+  ["원룸", "공장", "오피스텔", "사무실", "아파트"].map((category, index) =>
     createItem(`ad-1-${index + 1}`, category as EstateCategory, index + 1),
   ),
-  ["공장", "상가", "사무실", "공장", "아파트"].map((category, index) =>
+  ["빌라", "사무실", "원룸", "공장", "오피스텔"].map((category, index) =>
     createItem(`ad-2-${index + 1}`, category as EstateCategory, index + 7),
   ),
-  ["상가", "공장", "상가", "원룸", "사무실"].map((category, index) =>
+  ["아파트", "공장", "빌라", "오피스텔", "사무실"].map((category, index) =>
     createItem(`ad-3-${index + 1}`, category as EstateCategory, index + 13),
   ),
 ];
